@@ -1,6 +1,6 @@
 pragma solidity ^0.4.21;
 
-import './GivethBridge.sol';
+import "giveth-bridge/contracts/GivethBridge.sol";
 
 contract CollectionBox  is GivethBridge{
     
