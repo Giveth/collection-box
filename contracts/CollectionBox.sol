@@ -33,11 +33,7 @@ contract CollectionBox is BridgeInterface, Escapable, Pausable {
         receiverId = _receiverId;
         tokenWhitelist[0] = true; // enable eth transfers
     }
-
-    function getBalance() view public returns (uint){
-        return this.balance;
-    }
-
+    
     function() payable external {
 
         require(msg.value > 0);
