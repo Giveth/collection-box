@@ -78,16 +78,11 @@ contract CollectionBox is BridgeInterface, Escapable, Pausable {
         tokenWhitelist[token] = accepted;
     }
 
-    function transferToBridge() external onlyOwner payable {
+    function transferEthToBridge() external {
 
         for(uint i = 0; i < transactionsCount; i++) {
-            donateAndCreateGiver(transactions[i].donator, receiverId, transactions[i].token, transactions[i].donation);
-        
-            if(transactions[i].token != 0x000) {
-                ERC20(transactions[i].token).transferFrom(this, bridgeAddress, transactions[i].donation);
-            } 
+            donateETHAndCreateGiver(transactions[i].donator, receiverId, transactions[i].token, transactions[i].donation);
         }
-        bridgeAddress.transfer(this.balance);
         clearTransactions();
 
     }
@@ -96,9 +91,15 @@ contract CollectionBox is BridgeInterface, Escapable, Pausable {
         transactionsCount = 0;
     }
 
-    function donateAndCreateGiver(address giver, uint64 _receiverId, address token, uint _amount) whenNotPaused private {
+    function donateETHAndCreateGiver(address giver, uint64 _receiverId, address token, uint _amount) whenNotPaused private {
         require(giver != 0);
         require(_receiverId != 0);
+        require(token == 0x0);
+
+        /// donateAndCreateGiver() is a function in the bridge that needs to be
+        ///  called and since this contract also needs to send value to we add
+        ///  .value and then put in the params that are expected 
+        bridgeAddress.donateAndCreateGiver.value(_amount)(giver,_receiverId)
         emit DonateAndCreateGiver(giver, _receiverId, token, _amount);
     }
 
