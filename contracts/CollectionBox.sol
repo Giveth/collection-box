@@ -1,6 +1,7 @@
 pragma solidity ^0.4.21;
 
 import "giveth-common-contracts/contracts/Escapable.sol";
+import "giveth-bridge/contracts/GivethBridge.sol";
 import './lib/BridgeInterface.sol';
 import './lib/Pausable.sol';
 
@@ -11,7 +12,7 @@ contract CollectionBox is BridgeInterface, Escapable, Pausable {
     uint64 receiverId;
     uint transactionsCount = 0;
     event DonateAndCreateGiver(address giver, uint64 receiverId, address token, uint amount);
-
+    GivethBridge givethBridge;
 
     struct transaction {
         address donator;
@@ -32,8 +33,9 @@ contract CollectionBox is BridgeInterface, Escapable, Pausable {
     {
         receiverId = _receiverId;
         tokenWhitelist[0] = true; // enable eth transfers
+        givethBridge = GivethBridge(bridgeAddress);
     }
-    
+
     function() payable external {
 
         require(msg.value > 0);
@@ -78,17 +80,20 @@ contract CollectionBox is BridgeInterface, Escapable, Pausable {
         tokenWhitelist[token] = accepted;
     }
 
-    function transferToBridge() external onlyOwner payable {
+    function transferEthToBridge() external {
 
         for(uint i = 0; i < transactionsCount; i++) {
-            donateAndCreateGiver(transactions[i].donator, receiverId, transactions[i].token, transactions[i].donation);
+            donateETHAndCreateGiver(transactions[i].donator, receiverId, transactions[i].token, transactions[i].donation);
         
+            /*
+            enable this once bridge start supporting ERC20 tokens
             if(transactions[i].token != 0x000) {
                 ERC20(transactions[i].token).transferFrom(this, bridgeAddress, transactions[i].donation);
             } 
+            */
         }
-        bridgeAddress.transfer(this.balance);
-        clearTransactions();
+    
+      clearTransactions();
 
     }
 
@@ -96,9 +101,13 @@ contract CollectionBox is BridgeInterface, Escapable, Pausable {
         transactionsCount = 0;
     }
 
-    function donateAndCreateGiver(address giver, uint64 _receiverId, address token, uint _amount) whenNotPaused private {
+    function donateETHAndCreateGiver(address giver, uint64 _receiverId, address token, uint _amount) whenNotPaused private {
         require(giver != 0);
         require(_receiverId != 0);
+        require(token == 0x0);
+        
+        /* enable this once this issue got resolved: https://github.com/Giveth/giveth-bridge/issues/9 */
+        //givethBridge.donateAndCreateGiver.value(_amount)(giver,_receiverId);
         emit DonateAndCreateGiver(giver, _receiverId, token, _amount);
     }
 
